@@ -1,0 +1,21 @@
+version: "3.9"
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_SITE_URL=http://localhost:3000
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_META_PIXEL_ID=${NEXT_PUBLIC_META_PIXEL_ID:-}
+      - NEXT_PUBLIC_TIKTOK_PIXEL_ID=${NEXT_PUBLIC_TIKTOK_PIXEL_ID:-}
+      - NEXT_PUBLIC_SNAP_PIXEL_ID=${NEXT_PUBLIC_SNAP_PIXEL_ID:-}
+      - NEXT_PUBLIC_WHATSAPP_NUMBER=${NEXT_PUBLIC_WHATSAPP_NUMBER:-966500000000}
+      - NEXT_PUBLIC_SUPPORT_EMAIL=${NEXT_PUBLIC_SUPPORT_EMAIL:-support@sajaa.health}
+      - NEXT_PUBLIC_ENABLE_PIXEL_DEBUG=${NEXT_PUBLIC_ENABLE_PIXEL_DEBUG:-false}
+      - NEXT_PUBLIC_ENABLE_PLACEHOLDER_REVIEWS=${NEXT_PUBLIC_ENABLE_PLACEHOLDER_REVIEWS:-true}
+    restart: unless-stopped

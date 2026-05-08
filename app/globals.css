@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-arabic: 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --font-latin: 'Inter', system-ui, sans-serif;
+  --navy: #1B2A4A;
+  --gold: #D4B896;
+  --ivory: #F8F3EA;
+  --beige: #EADCC8;
+  --ink: #101827;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-arabic);
+  background-color: var(--ivory);
+  color: var(--ink);
+  direction: rtl;
+  text-align: right;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--ivory);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--gold);
+  border-radius: 3px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.drawer-open {
+  overflow: hidden;
+}
