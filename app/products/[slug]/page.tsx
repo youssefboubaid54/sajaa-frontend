@@ -78,7 +78,9 @@ export default function ProductPage({ params }: Props) {
       {/* 6. How to use (Alternating Section 3) */}
       <AlternatingSection
         title="كيفية الاستخدام"
-        description={product.howToUse.map((step, idx) => `${idx + 1}. ${step}`).join("\n\n")}
+        description={product.howToUse
+          .map((step) => `${step.step}. ${step.titleAr}: ${step.descAr}`)
+          .join("\n\n")}
         imageOnLeft={false}
         productSlug={product.slug}
         productNameAr={product.nameAr}

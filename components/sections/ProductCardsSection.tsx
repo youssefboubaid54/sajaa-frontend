@@ -11,7 +11,7 @@ interface ProductCardsSectionProps {
 export default function ProductCardsSection({ products }: ProductCardsSectionProps) {
   return (
     <section className="bg-white py-20 lg:py-28">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
         <div className="text-center max-w-xl mx-auto mb-14">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-navy mb-4">
             اختاري منتجك
@@ -29,7 +29,7 @@ export default function ProductCardsSection({ products }: ProductCardsSectionPro
             return (
               <div
                 key={product.slug}
-                className="group flex flex-col rounded-3xl border border-beige bg-ivory overflow-hidden hover:shadow-medium transition-all duration-300 hover:-translate-y-1"
+                className="group flex min-w-0 flex-col rounded-3xl border border-beige bg-ivory overflow-hidden hover:shadow-medium transition-all duration-300 hover:-translate-y-1"
               >
                 {/* Image */}
                 <div className="relative">
@@ -54,20 +54,22 @@ export default function ProductCardsSection({ products }: ProductCardsSectionPro
                 </div>
 
                 {/* Content */}
-                <div className="flex flex-col flex-1 p-6 gap-4">
+                <div className="flex flex-1 flex-col gap-4 p-6 sm:p-7">
                   {/* Name */}
-                  <div>
-                    <h3 className="font-bold text-navy text-xl">{product.nameAr}</h3>
-                    <p className="text-muted text-xs font-latin mt-0.5">{product.nameEn}</p>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-navy text-xl break-words">{product.nameAr}</h3>
+                    <p className="text-muted text-xs font-latin mt-0.5 break-words" dir="ltr">
+                      {product.nameEn}
+                    </p>
                   </div>
 
                   {/* Pain */}
-                  <p className="text-sm text-navy/70 leading-relaxed">{product.painAr}</p>
+                  <p className="text-sm text-navy/70 leading-relaxed break-words">{product.painAr}</p>
 
                   {/* Offer info */}
-                  <div className="bg-white rounded-xl p-3 border border-beige">
-                    <p className="text-xs text-muted mb-1">{defaultOffer.label}</p>
-                    <div className="flex items-baseline gap-2">
+                  <div className="bg-white rounded-xl p-4 border border-beige">
+                    <p className="text-xs text-muted mb-1 break-words">{defaultOffer.label}</p>
+                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                       <span className="font-bold text-navy text-lg">
                         {defaultOffer.priceSar} ريال
                       </span>

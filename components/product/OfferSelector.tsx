@@ -15,18 +15,18 @@ export default function OfferSelector({
   onSelect,
 }: OfferSelectorProps) {
   return (
-    <fieldset>
+    <fieldset className="min-w-0">
       <legend className="text-sm font-semibold text-navy mb-3">
         اختاري الكمية
       </legend>
-      <div className="flex flex-col gap-3" role="radiogroup">
+      <div className="flex min-w-0 flex-col gap-3" role="radiogroup">
         {offers.map((offer) => {
           const isSelected = selectedQty === offer.qty;
           return (
             <label
               key={offer.qty}
               className={[
-                "relative flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all duration-150 select-none",
+                "relative flex min-w-0 items-start gap-3 rounded-2xl border-2 p-4 cursor-pointer transition-all duration-150 select-none sm:items-center sm:gap-4 sm:p-5",
                 isSelected
                   ? "border-gold bg-gold/8 shadow-gold"
                   : "border-beige bg-white hover:border-gold/50",
@@ -55,11 +55,11 @@ export default function OfferSelector({
               </div>
 
               {/* Content */}
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span
                     className={[
-                      "font-semibold text-sm",
+                      "font-semibold text-sm break-words",
                       isSelected ? "text-navy" : "text-navy/80",
                     ].join(" ")}
                   >
@@ -72,17 +72,17 @@ export default function OfferSelector({
                   )}
                 </div>
                 {offer.anchor && (
-                  <p className="text-xs text-muted mt-0.5 line-through">
+                  <p className="text-xs text-muted mt-0.5 line-through break-words">
                     {offer.anchor}
                   </p>
                 )}
               </div>
 
               {/* Price */}
-              <div className="text-left shrink-0">
+              <div className="shrink-0 text-left">
                 <span
                   className={[
-                    "font-bold text-base",
+                    "font-bold text-base whitespace-nowrap",
                     isSelected ? "text-navy" : "text-navy/80",
                   ].join(" ")}
                 >
