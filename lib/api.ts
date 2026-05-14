@@ -1,12 +1,62 @@
 // API client for backend calls
 // Base URL from env: process.env.NEXT_PUBLIC_API_URL
 
+import type { CartItem } from "@/store/cart-store";
+
+export interface ApiCartItem {
+  product_slug: string;
+  quantity: number;
+}
+
+export interface ApiClientInfo {
+  user_agent: string;
+  ip?: string;
+  fbp?: string;
+  fbc?: string;
+  ttclid?: string;
+  sc_click_id?: string;
+}
+
+function readCookie(name: string): string {
+  if (typeof document === "undefined") return "";
+  const match = document.cookie.match(new RegExp(`(^|;\\s*)${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[2]) : "";
+}
+
+export function buildOrderCartPayload(items: CartItem[]): ApiCartItem[] {
+  return items.map((item) => ({
+    product_slug: `${item.productSlug}_${item.quantity}`,
+    quantity: 1,
+  }));
+}
+
+export function getTrackingCookies(): Record<string, string> {
+  return {
+    fbp: readCookie("_fbp"),
+    fbc: readCookie("_fbc"),
+    ttp: readCookie("_ttp"),
+  };
+}
+
+export function getBrowserClient(
+  attribution: Record<string, string> = {}
+): ApiClientInfo {
+  return {
+    user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "",
+    fbp: readCookie("_fbp") || attribution._fbp || "",
+    fbc: readCookie("_fbc") || attribution._fbc || "",
+    ttclid: attribution.ttclid || "",
+    sc_click_id: attribution.sc_click_id || attribution.ScCid || "",
+  };
+}
+
 export interface OrderIntentRequest {
   customer_name: string;
   phone: string;
-  cart: Array<{ product_slug: string; quantity: number; offer_price_sar: number }>;
+  cart: ApiCartItem[];
   attribution: Record<string, string>;
-  client: { user_agent: string; ip?: string };
+  client: ApiClientInfo;
+  cookies?: Record<string, string>;
 }
 
 export interface OrderIntentResponse {
@@ -21,33 +71,16 @@ export interface OrderIntentResponse {
 
 export interface OrderFinalizeRequest {
   order_intent_id: string;
-  customer: {
-    name: string;
-    phone_raw: string;
-    phone_e164: string;
-    phone_digits: string;
-  };
-  cart: Array<{ product_slug: string; quantity: number; offer_price_sar: number }>;
+  customer_name: string;
+  phone: string;
+  cart: ApiCartItem[];
   upsell: {
     accepted: boolean;
     product_slug?: string;
-    price_sar?: number;
-  };
-  pricing: {
-    subtotal_sar: number;
-    upsell_sar: number;
-    total_sar: number;
-  };
-  events: {
-    purchase_event_id: string;
-    initiate_checkout_event_id: string;
   };
   attribution: Record<string, string>;
   cookies: Record<string, string>;
-  page: {
-    event_source_url: string;
-    landing_url: string;
-  };
+  client: ApiClientInfo;
 }
 
 export interface OrderFinalizeResponse {

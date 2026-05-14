@@ -5,7 +5,12 @@ import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cart-store";
 import { useCheckoutStore } from "@/store/checkout-store";
 import { getCartSubtotal, formatPrice } from "@/lib/pricing";
-import { finalizeOrder } from "@/lib/api";
+import {
+  buildOrderCartPayload,
+  finalizeOrder,
+  getBrowserClient,
+  getTrackingCookies,
+} from "@/lib/api";
 import { generateEventId } from "@/lib/event-id";
 import { firePurchase } from "@/lib/pixels";
 import { PRODUCTS } from "@/data/products";
@@ -23,9 +28,7 @@ export default function UpsellPopup() {
     customerName,
     phoneRaw,
     phoneE164,
-    phoneDigits,
     upsellProduct: upsellSlug,
-    webEventIds,
     attribution,
     acceptUpsell,
     skipUpsell,
@@ -34,6 +37,7 @@ export default function UpsellPopup() {
   const { items, clearCart } = useCartStore();
   const [timeLeft, setTimeLeft] = useState(UPSELL_TIMER);
   const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const isOpen = step === "upsell";
   const subtotal = getCartSubtotal(items);
@@ -74,9 +78,16 @@ export default function UpsellPopup() {
 
   async function finalize(accepted: boolean) {
     setIsLoading(true);
+    setApiError(null);
 
     if (accepted) acceptUpsell();
     else skipUpsell();
+
+    if (!orderIntentId) {
+      setApiError("تعذر العثور على رقم الطلب. حاولي إعادة إتمام الطلب.");
+      setIsLoading(false);
+      return;
+    }
 
     const purchaseEventId = generateEventId("Purchase");
     const upsellTotal = accepted ? UPSELL_PRICE : 0;
@@ -86,49 +97,26 @@ export default function UpsellPopup() {
 
     try {
       const result = await finalizeOrder({
-        order_intent_id: orderIntentId ?? "",
-        customer: {
-          name: customerName,
-          phone_raw: phoneRaw,
-          phone_e164: phoneE164 ?? "",
-          phone_digits: phoneDigits ?? "",
-        },
-        cart: items.map((i) => ({
-          product_slug: i.productSlug,
-          quantity: i.quantity,
-          offer_price_sar: i.offerPriceSar,
-        })),
+        order_intent_id: orderIntentId,
+        customer_name: customerName,
+        phone: phoneE164 || phoneRaw,
+        cart: buildOrderCartPayload(items),
         upsell: {
           accepted,
           product_slug: accepted ? upsellSlug : undefined,
-          price_sar: accepted ? UPSELL_PRICE : undefined,
-        },
-        pricing: {
-          subtotal_sar: subtotal,
-          upsell_sar: upsellTotal,
-          total_sar: total,
-        },
-        events: {
-          purchase_event_id: purchaseEventId,
-          initiate_checkout_event_id: webEventIds["initiate_checkout"] ?? "",
         },
         attribution,
-        cookies: {},
-        page: {
-          event_source_url: typeof window !== "undefined" ? window.location.href : "",
-          landing_url: attribution["landing_url"] ?? "",
-        },
+        cookies: getTrackingCookies(),
+        client: getBrowserClient(attribution),
       });
 
       setLastOrderId(result.order_id);
       clearCart();
       setStep("done");
       router.push(`/thank-you/${result.order_id}`);
-    } catch {
-      // Fallback navigation
-      clearCart();
-      setStep("done");
-      router.push("/thank-you/order");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "";
+      setApiError(message || "تعذر تأكيد الطلب. حاولي مرة أخرى.");
     } finally {
       setIsLoading(false);
     }
@@ -168,6 +156,12 @@ export default function UpsellPopup() {
         )}
 
         <p className="text-center text-xs text-muted mb-4">{COPY.upsell.desc}</p>
+
+        {apiError && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-4 text-center">
+            <p className="text-red-700 text-sm font-medium">{apiError}</p>
+          </div>
+        )}
 
         <div className="space-y-3">
           <button

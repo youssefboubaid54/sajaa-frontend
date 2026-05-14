@@ -8,7 +8,12 @@ import { useCartStore } from "@/store/cart-store";
 import { useCheckoutStore } from "@/store/checkout-store";
 import { validateSaudiPhone } from "@/lib/phone";
 import { getCartSubtotal, formatPrice } from "@/lib/pricing";
-import { createOrderIntent } from "@/lib/api";
+import {
+  buildOrderCartPayload,
+  createOrderIntent,
+  getBrowserClient,
+  getTrackingCookies,
+} from "@/lib/api";
 import { getStoredAttribution } from "@/lib/attribution";
 import { generateEventId } from "@/lib/event-id";
 import { fireInitiateCheckout } from "@/lib/pixels";
@@ -66,15 +71,10 @@ export default function CheckoutPopup() {
       const intent = await createOrderIntent({
         customer_name: data.name,
         phone: phone.e164,
-        cart: items.map((i) => ({
-          product_slug: i.productSlug,
-          quantity: i.quantity,
-          offer_price_sar: i.offerPriceSar,
-        })),
+        cart: buildOrderCartPayload(items),
         attribution,
-        client: {
-          user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "",
-        },
+        client: getBrowserClient(attribution),
+        cookies: getTrackingCookies(),
       });
 
       setOrderIntentId(intent.order_intent_id);
@@ -85,12 +85,7 @@ export default function CheckoutPopup() {
       reset();
     } catch (err) {
       const message = err instanceof Error ? err.message : "";
-      if (message.includes("عذراً")) {
-        setApiError(message);
-      } else {
-        setStep("upsell");
-        reset();
-      }
+      setApiError(message || "تعذر إنشاء الطلب. حاولي مرة أخرى.");
     }
   }
 
