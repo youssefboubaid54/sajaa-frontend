@@ -17,14 +17,14 @@ export default function ProductFAQ({ faqItems }: ProductFAQProps) {
         return (
           <div
             key={idx}
-            className="bg-white rounded-2xl border border-beige shadow-soft overflow-hidden"
+            className="bg-white rounded-3xl border border-beige shadow-soft overflow-hidden"
           >
             <button
-              className="w-full flex items-center justify-between gap-3 px-5 py-4 text-right"
+              className="w-full flex items-center justify-between gap-4 px-5 py-4 text-right hover:bg-ivory/60 transition-colors"
               onClick={() => setOpenIdx(isOpen ? null : idx)}
               aria-expanded={isOpen}
             >
-              <span className="font-semibold text-navy text-sm">{item.questionAr}</span>
+              <span className="font-semibold text-navy text-sm sm:text-base leading-relaxed">{item.questionAr}</span>
               <span
                 className={`flex-shrink-0 w-6 h-6 rounded-full bg-beige flex items-center justify-center transition-transform duration-200 ${
                   isOpen ? "rotate-180" : ""
@@ -36,7 +36,7 @@ export default function ProductFAQ({ faqItems }: ProductFAQProps) {
               </span>
             </button>
             {isOpen && (
-              <div className="px-5 pb-4">
+              <div className="px-5 pb-5">
                 <p className="text-muted text-sm leading-relaxed">{item.answerAr}</p>
               </div>
             )}

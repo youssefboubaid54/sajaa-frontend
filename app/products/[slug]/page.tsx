@@ -10,6 +10,7 @@ import StarRating from "@/components/ui/StarRating";
 import SocialProofSection from "@/components/sections/SocialProofSection";
 import AlternatingSection from "@/components/product/AlternatingSection";
 import ScarcityBar from "@/components/product/ScarcityBar";
+import HowToUse from "@/components/product/HowToUse";
 
 interface Props {
   params: { slug: string };
@@ -33,7 +34,7 @@ export default function ProductPage({ params }: Props) {
   if (!product) notFound();
 
   return (
-    <div className="min-h-screen bg-ivory" dir="rtl">
+    <div className="min-h-screen bg-ivory pb-28 md:pb-0" dir="rtl">
       {/* Scarcity Bar */}
       <ScarcityBar />
 
@@ -41,10 +42,10 @@ export default function ProductPage({ params }: Props) {
       <ProductHero product={product} />
 
       {/* 2. Star rating slot */}
-      <section className="py-6 px-4 max-w-4xl mx-auto">
-        <div className="flex items-center justify-center gap-3">
+      <section className="px-5 pb-10 lg:pb-14 max-w-4xl mx-auto">
+        <div className="flex flex-wrap items-center justify-center gap-3 rounded-3xl border border-beige bg-white px-5 py-4 shadow-soft">
           <StarRating rating={5} showCount={false} />
-          <span className="text-navy/70 text-sm font-medium">أكثر من 10,000 امرأة سعودية يثقن بسَجَى</span>
+          <span className="text-navy/70 text-sm font-medium text-center">أكثر من 10,000 امرأة سعودية يثقن بسَجَى</span>
         </div>
       </section>
 
@@ -75,28 +76,29 @@ export default function ProductPage({ params }: Props) {
       {/* 5. Ingredients */}
       <IngredientCards ingredients={product.ingredients} />
 
-      {/* 6. How to use (Alternating Section 3) */}
-      <AlternatingSection
-        title="كيفية الاستخدام"
-        description={product.howToUse
-          .map((step) => `${step.step}. ${step.titleAr}: ${step.descAr}`)
-          .join("\n\n")}
-        imageOnLeft={false}
-        productSlug={product.slug}
-        productNameAr={product.nameAr}
-        bgColor={product.bgColor}
-        accentColor={product.accentColor}
-        icon="📖"
-      />
+      {/* 6. How to use */}
+      <section className="py-16 lg:py-24 bg-ivory">
+        <div className="max-w-4xl mx-auto px-5 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <div className="w-16 h-16 rounded-full bg-gold/10 flex items-center justify-center text-3xl mx-auto mb-5">
+              📖
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold text-navy leading-tight">
+              كيفية الاستخدام
+            </h2>
+          </div>
+          <HowToUse steps={product.howToUse} />
+        </div>
+      </section>
 
       {/* 7. Proof/certification */}
-      <section className="py-16 px-4 max-w-5xl mx-auto">
+      <section className="py-16 lg:py-24 px-5 sm:px-6 lg:px-8 max-w-5xl mx-auto">
         <ProductProof product={product} />
       </section>
 
       {/* 8. Comparison table */}
-      <section className="py-16 px-4 max-w-4xl mx-auto bg-white rounded-3xl shadow-soft my-8">
-        <h2 className="text-3xl font-bold text-navy text-center mb-10">لماذا سَجَى؟</h2>
+      <section className="py-16 px-5 sm:px-6 lg:px-8 max-w-4xl mx-auto bg-white rounded-[2rem] shadow-soft border border-beige my-8">
+        <h2 className="text-2xl sm:text-3xl font-bold text-navy text-center mb-10">لماذا سَجَى؟</h2>
         <ComparisonTable points={product.comparisonPoints} />
       </section>
 
@@ -104,8 +106,8 @@ export default function ProductPage({ params }: Props) {
       <SocialProofSection />
 
       {/* 10. FAQ */}
-      <section className="py-16 px-4 max-w-3xl mx-auto">
-        <h2 className="text-3xl font-bold text-navy text-center mb-10">الأسئلة الشائعة</h2>
+      <section className="py-16 lg:py-24 px-5 sm:px-6 lg:px-8 max-w-3xl mx-auto">
+        <h2 className="text-2xl sm:text-3xl font-bold text-navy text-center mb-10">الأسئلة الشائعة</h2>
         <ProductFAQ faqItems={product.faq} />
       </section>
 

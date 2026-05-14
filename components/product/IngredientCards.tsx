@@ -6,29 +6,29 @@ interface IngredientCardsProps {
 
 export default function IngredientCards({ ingredients }: IngredientCardsProps) {
   return (
-    <section className="py-16 lg:py-20 bg-white">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-16 lg:py-24 bg-white">
+      <div className="max-w-6xl mx-auto px-5 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold text-navy mb-4">
+          <h2 className="text-2xl sm:text-4xl font-bold text-navy mb-4">
             مكونات مدعومة بالعلم
           </h2>
-          <p className="text-navy/60 text-lg">
+          <p className="text-navy/60 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
             كل مكوّن تم اختياره بناءً على دراسات علمية لدعم الاسترخاء والهدوء.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {ingredients.map((ing, i) => (
             <div
               key={i}
-              className="flex flex-col p-6 bg-ivory rounded-3xl border border-beige hover:shadow-soft transition-shadow relative overflow-hidden"
+              className="flex min-w-0 flex-col p-5 bg-ivory rounded-3xl border border-beige hover:shadow-soft transition-shadow relative overflow-hidden"
             >
               <div className="absolute top-0 right-0 w-24 h-24 bg-gold/5 rounded-bl-full -z-10" />
-              <div className="flex items-center gap-4 mb-4">
-                <span className="text-4xl">{ing.icon}</span>
-                <div>
+              <div className="flex items-center gap-3 mb-4">
+                <span className="text-3xl shrink-0">{ing.icon}</span>
+                <div className="min-w-0">
                   <h3 className="font-bold text-navy text-lg">{ing.nameAr}</h3>
-                  <p className="text-xs text-muted font-latin">{ing.nameEn}</p>
+                  <p className="text-xs text-muted font-latin break-words" dir="ltr">{ing.nameEn}</p>
                 </div>
               </div>
               <p className="text-sm text-navy/70 leading-relaxed mb-4 flex-1">

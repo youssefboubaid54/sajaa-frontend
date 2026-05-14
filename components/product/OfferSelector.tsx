@@ -26,10 +26,10 @@ export default function OfferSelector({
             <label
               key={offer.qty}
               className={[
-                "relative flex min-w-0 items-start gap-3 rounded-2xl border-2 p-4 cursor-pointer transition-all duration-150 select-none sm:items-center sm:gap-4 sm:p-5",
+                "relative flex min-w-0 items-start gap-3 rounded-3xl border-2 p-4 cursor-pointer transition-all duration-150 select-none sm:items-center sm:gap-4 sm:p-5",
                 isSelected
-                  ? "border-gold bg-gold/8 shadow-gold"
-                  : "border-beige bg-white hover:border-gold/50",
+                  ? "border-gold bg-gold/10 shadow-gold"
+                  : "border-beige bg-white hover:border-gold/50 hover:shadow-soft",
               ].join(" ")}
             >
               <input
@@ -66,7 +66,7 @@ export default function OfferSelector({
                     {offer.label}
                   </span>
                   {offer.badge && (
-                    <Badge variant={offer.qty === 2 ? "gold" : "navy"} className="text-[10px]">
+                    <Badge variant={offer.qty === 2 ? "gold" : "navy"} className="text-[10px] shadow-soft">
                       {offer.badge}
                     </Badge>
                   )}

@@ -44,11 +44,11 @@ export default function StickyMobileCTA({ product }: StickyMobileCTAProps) {
   }
 
   return (
-    <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-beige px-4 py-3 shadow-large safe-area-pb">
+    <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-beige px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-large">
       <div className="flex items-center gap-3">
         <div className="flex-1 min-w-0">
           <p className="text-navy font-bold text-sm truncate">{product.nameAr}</p>
-          <p className="text-muted text-xs">{defaultOffer.label} — {formatPrice(defaultOffer.priceSar)}</p>
+          <p className="text-muted text-xs truncate">{defaultOffer.label} — {formatPrice(defaultOffer.priceSar)}</p>
         </div>
         <button
           onClick={handleAdd}
