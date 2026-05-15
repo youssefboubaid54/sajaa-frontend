@@ -5,19 +5,79 @@ on:
     branches:
       - main
 
+concurrency:
+  group: easypanel-deploy-frontend
+  cancel-in-progress: true
+
 jobs:
   deploy:
+    name: Trigger Easypanel Deploy
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
     steps:
+      # ── 1. Checkout (needed for build verification) ─────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 2. Setup Node ────────────────────────────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # ── 3. Install dependencies ──────────────────────────────────────────
+      - name: Install dependencies
+        run: npm ci
+
+      # ── 4. Type-check + lint ─────────────────────────────────────────────
+      - name: Lint & type-check
+        run: npm run lint
+
+      # ── 5. Build ─────────────────────────────────────────────────────────
+      - name: Build
+        run: npm run build
+
+      # ── 6. Trigger Easypanel webhook ─────────────────────────────────────
       - name: Trigger Easypanel deploy
         env:
           EASYPANEL_DEPLOY_WEBHOOK_URL: ${{ secrets.EASYPANEL_DEPLOY_WEBHOOK_URL }}
         run: |
           if [ -z "$EASYPANEL_DEPLOY_WEBHOOK_URL" ]; then
-            echo "Missing EASYPANEL_DEPLOY_WEBHOOK_URL repository secret."
+            echo "❌ Secret EASYPANEL_DEPLOY_WEBHOOK_URL is not set."
+            echo ""
+            echo "To fix this:"
+            echo "  1. Open your Easypanel dashboard"
+            echo "  2. Go to your project → frontend service → Deploy Webhook"
+            echo "  3. Copy the webhook URL"
+            echo "  4. Add it to GitHub: Repo → Settings → Secrets → Actions → New secret"
+            echo "     Name:  EASYPANEL_DEPLOY_WEBHOOK_URL"
+            echo "     Value: <your webhook URL>"
             exit 1
           fi
 
-          curl --fail --show-error --silent \
+          echo "🚀 Triggering Easypanel deployment..."
+
+          HTTP_STATUS=$(curl \
+            --fail-with-body \
+            --show-error \
+            --silent \
+            --max-time 30 \
+            --retry 2 \
+            --retry-delay 5 \
+            --output /tmp/easypanel_response.txt \
+            --write-out "%{http_code}" \
             --request POST \
-            "$EASYPANEL_DEPLOY_WEBHOOK_URL"
+            "$EASYPANEL_DEPLOY_WEBHOOK_URL")
+
+          RESPONSE=$(cat /tmp/easypanel_response.txt 2>/dev/null || echo "(empty)")
+
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+            echo "✅ Easypanel deploy triggered successfully (HTTP $HTTP_STATUS)"
+            echo "Response: $RESPONSE"
+          else
+            echo "❌ Easypanel webhook returned HTTP $HTTP_STATUS"
+            echo "Response: $RESPONSE"
+            exit 1
+          fi
