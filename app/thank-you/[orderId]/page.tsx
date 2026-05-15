@@ -3,20 +3,17 @@ import { useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useCartStore } from "@/store/cart-store";
 import { useCheckoutStore } from "@/store/checkout-store";
-import { firePurchase } from "@/lib/pixels";
 import { formatPhoneDisplay } from "@/lib/phone";
 import Link from "next/link";
 
 export default function ThankYouPage() {
   const params = useParams();
-  const orderId = params.orderId as string;
-  const { items, clearCart } = useCartStore();
-  const { customerName, phoneE164, lastOrderId, webEventIds } = useCheckoutStore();
+  const rawOrderId = Array.isArray(params.orderId) ? params.orderId[0] : params.orderId;
+  const orderNumber = decodeURIComponent(rawOrderId || "");
+  const { clearCart } = useCartStore();
+  const { customerName, phoneE164 } = useCheckoutStore();
 
   useEffect(() => {
-    if (lastOrderId && webEventIds.purchase) {
-      firePurchase(webEventIds.purchase, lastOrderId, 0, items);
-    }
     clearCart();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -44,7 +41,9 @@ export default function ThankYouPage() {
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
               <span className="text-muted">رقم الطلب</span>
-              <span className="font-bold text-navy font-mono">{orderId}</span>
+              <span className="font-bold text-navy font-mono text-left" dir="ltr">
+                {orderNumber}
+              </span>
             </div>
             {customerName && (
               <div className="flex justify-between">
@@ -90,7 +89,7 @@ export default function ThankYouPage() {
         {/* WhatsApp support */}
         <div className="text-center mb-6">
           <a
-            href={`https://wa.me/${whatsappNumber}?text=مرحباً، طلبي رقم ${orderId}`}
+            href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`مرحباً، طلبي رقم ${orderNumber}`)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block bg-[#25D366] text-white font-bold px-6 py-3 rounded-2xl hover:bg-[#25D366]/90 transition-colors"
@@ -101,7 +100,8 @@ export default function ThankYouPage() {
 
         {/* Order number reminder */}
         <p className="text-center text-muted text-sm">
-          احتفظي برقم الطلب: <strong className="text-navy font-mono">{orderId}</strong>
+          احتفظي برقم الطلب:{" "}
+          <strong className="text-navy font-mono" dir="ltr">{orderNumber}</strong>
         </p>
 
         <div className="text-center mt-8">
