@@ -2,9 +2,9 @@
 
 import type { CartItem } from "@/store/cart-store";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-function w(): Record<string, any> | null {
-  return typeof window !== "undefined" ? (window as unknown as Record<string, any>) : null;
+// eslint-disable-next-line @next/next/no-assign-module-variable
+function w(): Record<string, unknown> | null {
+  return typeof window !== "undefined" ? (window as unknown as Record<string, unknown>) : null;
 }
 
 const eventQueue: Array<() => void> = [];

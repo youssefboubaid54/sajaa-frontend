@@ -10,6 +10,7 @@ import {
   finalizeOrder,
   getBrowserClient,
   getTrackingCookies,
+  ApiConfigError,
 } from "@/lib/api";
 import { generateEventId } from "@/lib/event-id";
 import { firePurchase } from "@/lib/pixels";
@@ -96,11 +97,13 @@ export default function UpsellPopup() {
     firePurchase(purchaseEventId, orderIntentId ?? "", total, items);
 
     try {
+      const cart = buildOrderCartPayload(items);
+
       const result = await finalizeOrder({
         order_intent_id: orderIntentId,
         customer_name: customerName,
         phone: phoneE164 || phoneRaw,
-        cart: buildOrderCartPayload(items),
+        cart,
         upsell: {
           accepted,
           product_slug: accepted ? upsellSlug : undefined,
@@ -115,8 +118,12 @@ export default function UpsellPopup() {
       setStep("done");
       router.push(`/thank-you/${result.order_id}`);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "";
-      setApiError(message || "تعذر تأكيد الطلب. حاولي مرة أخرى.");
+      if (err instanceof ApiConfigError) {
+        setApiError(err.message);
+      } else {
+        const message = err instanceof Error ? err.message : "";
+        setApiError(message || "تعذر تأكيد الطلب. حاولي مرة أخرى.");
+      }
     } finally {
       setIsLoading(false);
     }

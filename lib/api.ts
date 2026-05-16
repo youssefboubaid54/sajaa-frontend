@@ -1,6 +1,3 @@
-// API client for backend calls
-// Base URL from env: process.env.NEXT_PUBLIC_API_URL
-
 import type { CartItem } from "@/store/cart-store";
 
 export interface ApiCartItem {
@@ -17,14 +14,53 @@ export interface ApiClientInfo {
   sc_click_id?: string;
 }
 
+export class ApiConfigError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ApiConfigError";
+  }
+}
+
+function getApiBaseUrl(): string {
+  const url = process.env.NEXT_PUBLIC_API_URL;
+  if (!url || url === "undefined") {
+    throw new ApiConfigError(
+      "لم يتم تكوين عنوان الخادم. تواصلي مع الدعم الفني."
+    );
+  }
+  try {
+    new URL(url);
+  } catch {
+    throw new ApiConfigError(
+      "عنوان الخادم غير صالح. تواصلي مع الدعم الفني."
+    );
+  }
+  return url.replace(/\/+$/, "");
+}
+
+export function isApiConfigured(): boolean {
+  try {
+    getApiBaseUrl();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function readCookie(name: string): string {
   if (typeof document === "undefined") return "";
   const match = document.cookie.match(new RegExp(`(^|;\\s*)${name}=([^;]*)`));
   return match ? decodeURIComponent(match[2]) : "";
 }
 
+const VALID_SLUGS = new Set(["hams", "hidn", "subaat"]);
+
 export function buildOrderCartPayload(items: CartItem[]): ApiCartItem[] {
-  return items.map((item) => ({
+  const validItems = items.filter((item) => VALID_SLUGS.has(item.productSlug));
+  if (validItems.length === 0) {
+    throw new Error("السلة فارغة أو تحتوي على منتجات غير صالحة.");
+  }
+  return validItems.map((item) => ({
     product_slug: `${item.productSlug}_${item.quantity}`,
     quantity: 1,
   }));
@@ -93,7 +129,13 @@ export interface OrderFinalizeResponse {
 export async function createOrderIntent(
   payload: OrderIntentRequest
 ): Promise<OrderIntentResponse> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/intent`, {
+  const baseUrl = getApiBaseUrl();
+
+  if (!payload.cart || payload.cart.length === 0) {
+    throw new Error("لا يمكن إنشاء طلب بسلة فارغة.");
+  }
+
+  const res = await fetch(`${baseUrl}/api/orders/intent`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -108,7 +150,13 @@ export async function createOrderIntent(
 export async function finalizeOrder(
   payload: OrderFinalizeRequest
 ): Promise<OrderFinalizeResponse> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/finalize`, {
+  const baseUrl = getApiBaseUrl();
+
+  if (!payload.order_intent_id) {
+    throw new Error("رقم الطلب مفقود. حاولي إعادة إتمام الطلب.");
+  }
+
+  const res = await fetch(`${baseUrl}/api/orders/finalize`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useCartStore } from "@/store/cart-store";
 import { useCheckoutStore } from "@/store/checkout-store";
 import { getCartSubtotal, getCartSavings, formatPrice } from "@/lib/pricing";
+import { isApiConfigured } from "@/lib/api";
 import { PRODUCTS } from "@/data/products";
 import { COPY } from "@/data/copy";
 
@@ -149,12 +150,18 @@ export default function CartDrawer() {
               <span className="text-navy font-bold">المجموع</span>
               <span className="text-navy font-bold text-lg">{formatPrice(subtotal)}</span>
             </div>
+            {!isApiConfigured() && (
+              <p className="text-amber-600 text-xs text-center">
+                خدمة الطلبات غير متاحة حالياً. حاولي لاحقاً.
+              </p>
+            )}
             <button
               onClick={() => {
                 closeCart();
                 setStep("checkout");
               }}
-              className="w-full bg-navy text-gold py-4 rounded-2xl font-bold text-base hover:bg-navy-light transition-colors"
+              disabled={!isApiConfigured()}
+              className="w-full bg-navy text-gold py-4 rounded-2xl font-bold text-base hover:bg-navy-light transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {COPY.cart.cta}
             </button>

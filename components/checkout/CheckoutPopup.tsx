@@ -13,6 +13,8 @@ import {
   createOrderIntent,
   getBrowserClient,
   getTrackingCookies,
+  isApiConfigured,
+  ApiConfigError,
 } from "@/lib/api";
 import { getStoredAttribution } from "@/lib/attribution";
 import { generateEventId } from "@/lib/event-id";
@@ -37,6 +39,10 @@ export default function CheckoutPopup() {
   const isOpen = step === "checkout";
   const [apiError, setApiError] = useState<string | null>(null);
 
+  const apiReady = isApiConfigured();
+  const hasItems = items.length > 0;
+  const canSubmit = apiReady && hasItems;
+
   const {
     register,
     handleSubmit,
@@ -44,7 +50,6 @@ export default function CheckoutPopup() {
     reset,
   } = useForm<FormValues>({ resolver: zodResolver(schema) });
 
-  // Lock body scroll
   useEffect(() => {
     if (isOpen) document.body.classList.add("drawer-open");
     else document.body.classList.remove("drawer-open");
@@ -55,6 +60,12 @@ export default function CheckoutPopup() {
 
   async function onSubmit(data: FormValues) {
     setApiError(null);
+
+    if (!hasItems) {
+      setApiError("السلة فارغة. أضيفي منتجاً أولاً.");
+      return;
+    }
+
     const phone = validateSaudiPhone(data.phone);
     if (!phone.isValid || !phone.e164 || !phone.digits) return;
 
@@ -68,10 +79,12 @@ export default function CheckoutPopup() {
     setAttribution(attribution);
 
     try {
+      const cart = buildOrderCartPayload(items);
+
       const intent = await createOrderIntent({
         customer_name: data.name,
         phone: phone.e164,
-        cart: buildOrderCartPayload(items),
+        cart,
         attribution,
         client: getBrowserClient(attribution),
         cookies: getTrackingCookies(),
@@ -84,8 +97,12 @@ export default function CheckoutPopup() {
       setStep("upsell");
       reset();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "";
-      setApiError(message || "تعذر إنشاء الطلب. حاولي مرة أخرى.");
+      if (err instanceof ApiConfigError) {
+        setApiError(err.message);
+      } else {
+        const message = err instanceof Error ? err.message : "";
+        setApiError(message || "تعذر إنشاء الطلب. حاولي مرة أخرى.");
+      }
     }
   }
 
@@ -117,8 +134,17 @@ export default function CheckoutPopup() {
           <p className="text-muted text-sm mt-2">{COPY.checkout.desc}</p>
         </div>
 
+        {/* Empty cart warning */}
+        {!hasItems && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4 text-center">
+            <p className="text-amber-700 text-sm font-medium">
+              السلة فارغة. أضيفي منتجاً أولاً لإتمام الطلب.
+            </p>
+          </div>
+        )}
+
         {/* Cart summary */}
-        {items.length > 0 && (
+        {hasItems && (
           <div className="bg-beige/50 rounded-2xl p-4 mb-4 space-y-1">
             {items.map((item) => (
               <div key={item.id} className="flex justify-between text-sm">
@@ -144,7 +170,8 @@ export default function CheckoutPopup() {
             <input
               {...register("name")}
               placeholder={COPY.checkout.namePlaceholder}
-              className="w-full border border-beige rounded-xl px-4 py-3 bg-white text-ink placeholder-muted focus:outline-none focus:border-gold transition-colors text-right"
+              disabled={!canSubmit}
+              className="w-full border border-beige rounded-xl px-4 py-3 bg-white text-ink placeholder-muted focus:outline-none focus:border-gold transition-colors text-right disabled:opacity-50 disabled:cursor-not-allowed"
               dir="rtl"
             />
             {errors.name && (
@@ -158,7 +185,8 @@ export default function CheckoutPopup() {
               placeholder={COPY.checkout.phonePlaceholder}
               type="tel"
               dir="ltr"
-              className="w-full border border-beige rounded-xl px-4 py-3 bg-white text-ink placeholder-muted focus:outline-none focus:border-gold transition-colors text-right"
+              disabled={!canSubmit}
+              className="w-full border border-beige rounded-xl px-4 py-3 bg-white text-ink placeholder-muted focus:outline-none focus:border-gold transition-colors text-right disabled:opacity-50 disabled:cursor-not-allowed"
             />
             {errors.phone && (
               <p className="text-error text-xs mt-1">{errors.phone.message}</p>
@@ -167,8 +195,8 @@ export default function CheckoutPopup() {
 
           <button
             type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-navy text-gold py-4 rounded-2xl font-bold text-base hover:bg-navy-light transition-colors disabled:opacity-60"
+            disabled={isSubmitting || !canSubmit}
+            className="w-full bg-navy text-gold py-4 rounded-2xl font-bold text-base hover:bg-navy-light transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isSubmitting ? "جارٍ التأكيد..." : COPY.checkout.cta}
           </button>
