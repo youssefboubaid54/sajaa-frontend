@@ -22,8 +22,7 @@ export class ApiConfigError extends Error {
 }
 
 export function isApiConfigured(): boolean {
-  const url = process.env.NEXT_PUBLIC_API_URL;
-  return !!url && url !== "undefined";
+  return true;
 }
 
 function readCookie(name: string): string {
@@ -108,12 +107,6 @@ export interface OrderFinalizeResponse {
 export async function createOrderIntent(
   payload: OrderIntentRequest
 ): Promise<OrderIntentResponse> {
-  if (!isApiConfigured()) {
-    throw new ApiConfigError(
-      "لم يتم تكوين عنوان الخادم. تواصلي مع الدعم الفني."
-    );
-  }
-
   if (!payload.cart || payload.cart.length === 0) {
     throw new Error("لا يمكن إنشاء طلب بسلة فارغة.");
   }
@@ -135,12 +128,6 @@ export async function createOrderIntent(
 export async function finalizeOrder(
   payload: OrderFinalizeRequest
 ): Promise<OrderFinalizeResponse> {
-  if (!isApiConfigured()) {
-    throw new ApiConfigError(
-      "لم يتم تكوين عنوان الخادم. تواصلي مع الدعم الفني."
-    );
-  }
-
   if (!payload.order_intent_id) {
     throw new Error("رقم الطلب مفقود. حاولي إعادة إتمام الطلب.");
   }
