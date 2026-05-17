@@ -13,7 +13,21 @@ const PRICE_MAP: Record<string, number> = {
 };
 const UPSELL_PRICE = 99;
 
-function generateOrderId(): string {
+interface OrderRecord {
+  intentId: string;
+  order_number: string | null;
+  status: "intent" | "confirmed";
+  customer_name: string;
+  phone: string;
+  cart: { product_slug: string; quantity: number }[];
+  upsell: { accepted: boolean; product_slug?: string } | null;
+  total_sar: number | null;
+  attribution: Record<string, string>;
+  createdAt: string;
+  confirmedAt: string | null;
+}
+
+function generateOrderNumber(): string {
   const now = new Date();
   const yy = String(now.getFullYear()).slice(2);
   const mm = String(now.getMonth() + 1).padStart(2, "0");
@@ -28,26 +42,26 @@ function computeTotal(
 ): number {
   let total = 0;
   for (const item of cart) {
-    const parts = item.product_slug.split("_");
-    const qty = parts[1] || "1";
+    const qty = item.product_slug.split("_")[1] || "1";
     total += PRICE_MAP[qty] ?? 199;
   }
   if (upsellAccepted) total += UPSELL_PRICE;
   return total;
 }
 
-async function appendOrder(record: unknown): Promise<void> {
-  await fs.mkdir(ORDERS_DIR, { recursive: true });
-  let existing: unknown[] = [];
+async function readOrders(): Promise<OrderRecord[]> {
   try {
     const buf = await fs.readFile(ORDERS_FILE, "utf8");
     const parsed = JSON.parse(buf);
-    if (Array.isArray(parsed)) existing = parsed;
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    // file doesn't exist yet
+    return [];
   }
-  existing.push(record);
-  await fs.writeFile(ORDERS_FILE, JSON.stringify(existing, null, 2), "utf8");
+}
+
+async function writeOrders(orders: OrderRecord[]): Promise<void> {
+  await fs.mkdir(ORDERS_DIR, { recursive: true });
+  await fs.writeFile(ORDERS_FILE, JSON.stringify(orders, null, 2), "utf8");
 }
 
 export async function POST(req: Request) {
@@ -88,41 +102,56 @@ export async function POST(req: Request) {
 
   const upsellAccepted = upsell?.accepted === true;
   const total = computeTotal(cart, upsellAccepted);
-  const orderId = generateOrderId();
-
-  const record = {
-    orderId,
-    intentId,
-    receivedAt: new Date().toISOString(),
-    customer_name: customerName.trim(),
-    phone,
-    cart,
-    upsell: upsellAccepted
-      ? { accepted: true, product_slug: upsell?.product_slug }
-      : { accepted: false },
-    total_sar: total,
-    attribution: body.attribution || {},
-  };
+  const orderNumber = generateOrderNumber();
 
   try {
-    await appendOrder(record);
+    const orders = await readOrders();
+    const idx = orders.findIndex((o) => o.intentId === intentId);
+
+    if (idx === -1) {
+      return NextResponse.json(
+        { detail: "الطلب المؤقت غير موجود أو منتهي الصلاحية." },
+        { status: 404 }
+      );
+    }
+
+    if (orders[idx].status === "confirmed") {
+      return NextResponse.json({
+        order_id: orders[idx].order_number,
+        status: "confirmed",
+        total_sar: orders[idx].total_sar,
+        thank_you_url: `/thank-you/${orders[idx].order_number}`,
+      });
+    }
+
+    orders[idx] = {
+      ...orders[idx],
+      order_number: orderNumber,
+      status: "confirmed",
+      customer_name: customerName.trim(),
+      phone,
+      cart,
+      upsell: upsellAccepted
+        ? { accepted: true, product_slug: upsell?.product_slug }
+        : { accepted: false },
+      total_sar: total,
+      attribution: (body.attribution as Record<string, string>) || orders[idx].attribution,
+      confirmedAt: new Date().toISOString(),
+    };
+
+    await writeOrders(orders);
   } catch (err) {
-    console.error("[orders/finalize] Failed to persist order:", err);
+    console.error("[orders/finalize] Failed to update order:", err);
     return NextResponse.json(
-      { detail: "تعذّر حفظ الطلب. حاولي مرة أخرى." },
+      { detail: "تعذّر تأكيد الطلب. حاولي مرة أخرى." },
       { status: 500 }
     );
   }
 
-  // Clean up intent from memory
-  if (globalThis.__orderIntents) {
-    globalThis.__orderIntents.delete(intentId);
-  }
-
   return NextResponse.json({
-    order_id: orderId,
+    order_id: orderNumber,
     status: "confirmed",
     total_sar: total,
-    thank_you_url: `/thank-you/${orderId}`,
+    thank_you_url: `/thank-you/${orderNumber}`,
   });
 }

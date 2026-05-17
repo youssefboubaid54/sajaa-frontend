@@ -1,33 +1,46 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { promises as fs } from "fs";
+import path from "path";
 
 const ALL_SLUGS = ["hams", "hidn", "subaat"];
 const UPSELL_PRICE = 99;
 const UPSELL_EXPIRES = 180;
 
-interface IntentData {
+const ORDERS_DIR = path.join(process.cwd(), "data");
+const ORDERS_FILE = path.join(ORDERS_DIR, "orders.json");
+
+interface OrderRecord {
+  intentId: string;
+  order_number: string | null;
+  status: "intent" | "confirmed";
   customer_name: string;
   phone: string;
   cart: { product_slug: string; quantity: number }[];
+  upsell: { accepted: boolean; product_slug?: string } | null;
+  total_sar: number | null;
   attribution: Record<string, string>;
-  created_at: number;
+  createdAt: string;
+  confirmedAt: string | null;
 }
 
-declare global {
-  // eslint-disable-next-line no-var
-  var __orderIntents: Map<string, IntentData> | undefined;
-}
-
-function getIntentStore(): Map<string, IntentData> {
-  if (!globalThis.__orderIntents) {
-    globalThis.__orderIntents = new Map();
+async function readOrders(): Promise<OrderRecord[]> {
+  try {
+    const buf = await fs.readFile(ORDERS_FILE, "utf8");
+    const parsed = JSON.parse(buf);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
   }
-  return globalThis.__orderIntents;
+}
+
+async function writeOrders(orders: OrderRecord[]): Promise<void> {
+  await fs.mkdir(ORDERS_DIR, { recursive: true });
+  await fs.writeFile(ORDERS_FILE, JSON.stringify(orders, null, 2), "utf8");
 }
 
 function parseSlugFromCartItem(productSlug: string): string {
-  const parts = productSlug.split("_");
-  return parts[0];
+  return productSlug.split("_")[0];
 }
 
 export async function POST(req: Request) {
@@ -66,14 +79,31 @@ export async function POST(req: Request) {
 
   const intentId = crypto.randomUUID();
 
-  const store = getIntentStore();
-  store.set(intentId, {
+  const record: OrderRecord = {
+    intentId,
+    order_number: null,
+    status: "intent",
     customer_name: customerName.trim(),
     phone,
     cart,
+    upsell: null,
+    total_sar: null,
     attribution: (body.attribution as Record<string, string>) || {},
-    created_at: Date.now(),
-  });
+    createdAt: new Date().toISOString(),
+    confirmedAt: null,
+  };
+
+  try {
+    const orders = await readOrders();
+    orders.push(record);
+    await writeOrders(orders);
+  } catch (err) {
+    console.error("[orders/intent] Failed to persist intent:", err);
+    return NextResponse.json(
+      { detail: "تعذّر حفظ الطلب. حاولي مرة أخرى." },
+      { status: 500 }
+    );
+  }
 
   const cartSlugs = new Set(cart.map((c) => parseSlugFromCartItem(c.product_slug)));
   const upsellSlug = ALL_SLUGS.find((s) => !cartSlugs.has(s));
