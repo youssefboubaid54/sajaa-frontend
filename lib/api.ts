@@ -21,30 +21,9 @@ export class ApiConfigError extends Error {
   }
 }
 
-function getApiBaseUrl(): string {
-  const url = process.env.NEXT_PUBLIC_API_URL;
-  if (!url || url === "undefined") {
-    throw new ApiConfigError(
-      "لم يتم تكوين عنوان الخادم. تواصلي مع الدعم الفني."
-    );
-  }
-  try {
-    new URL(url);
-  } catch {
-    throw new ApiConfigError(
-      "عنوان الخادم غير صالح. تواصلي مع الدعم الفني."
-    );
-  }
-  return url.replace(/\/+$/, "");
-}
-
 export function isApiConfigured(): boolean {
-  try {
-    getApiBaseUrl();
-    return true;
-  } catch {
-    return false;
-  }
+  const url = process.env.NEXT_PUBLIC_API_URL;
+  return !!url && url !== "undefined";
 }
 
 function readCookie(name: string): string {
@@ -129,20 +108,26 @@ export interface OrderFinalizeResponse {
 export async function createOrderIntent(
   payload: OrderIntentRequest
 ): Promise<OrderIntentResponse> {
-  const baseUrl = getApiBaseUrl();
+  if (!isApiConfigured()) {
+    throw new ApiConfigError(
+      "لم يتم تكوين عنوان الخادم. تواصلي مع الدعم الفني."
+    );
+  }
 
   if (!payload.cart || payload.cart.length === 0) {
     throw new Error("لا يمكن إنشاء طلب بسلة فارغة.");
   }
 
-  const res = await fetch(`${baseUrl}/api/orders/intent`, {
+  const res = await fetch("/api/orders/intent", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error((error as { detail?: string }).detail || "فشل إنشاء الطلب");
+    const body = await res.json().catch(() => ({}));
+    const msg = (body as Record<string, string>).detail
+      || (body as Record<string, string>).message;
+    throw new Error(msg || "فشل إنشاء الطلب");
   }
   return res.json();
 }
@@ -150,20 +135,26 @@ export async function createOrderIntent(
 export async function finalizeOrder(
   payload: OrderFinalizeRequest
 ): Promise<OrderFinalizeResponse> {
-  const baseUrl = getApiBaseUrl();
+  if (!isApiConfigured()) {
+    throw new ApiConfigError(
+      "لم يتم تكوين عنوان الخادم. تواصلي مع الدعم الفني."
+    );
+  }
 
   if (!payload.order_intent_id) {
     throw new Error("رقم الطلب مفقود. حاولي إعادة إتمام الطلب.");
   }
 
-  const res = await fetch(`${baseUrl}/api/orders/finalize`, {
+  const res = await fetch("/api/orders/finalize", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error((error as { detail?: string }).detail || "فشل تأكيد الطلب");
+    const body = await res.json().catch(() => ({}));
+    const msg = (body as Record<string, string>).detail
+      || (body as Record<string, string>).message;
+    throw new Error(msg || "فشل تأكيد الطلب");
   }
   return res.json();
 }
