@@ -12,6 +12,7 @@ const nextConfig = {
     contentDispositionType: "attachment",
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
+  serverExternalPackages: ["pg"],
   experimental: {
     optimizePackageImports: ["framer-motion", "embla-carousel-react"],
   },
